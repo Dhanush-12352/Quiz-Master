@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import AdminLayout from '../../components/AdminLayout';
-import { getFromStorage } from '../../utils/storage';
-import { Users, BookOpen, HelpCircle, Activity, ChevronRight } from 'lucide-react';
+import { getFromStorage, saveToStorage } from '../../utils/storage';
+import { Users, BookOpen, HelpCircle, Activity, ChevronRight, Megaphone, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({ users: 0, subjects: 0, questions: 0 });
   const [recentUsers, setRecentUsers] = useState([]);
+  
+  // Announcements State
+  const [announcementText, setAnnouncementText] = useState('');
+  const [announcements, setAnnouncements] = useState([]);
 
   useEffect(() => {
     const users = getFromStorage('users', []).filter(u => u.role === 'user');
@@ -14,9 +18,29 @@ export default function AdminDashboard() {
     const questions = getFromStorage('questions', []);
     setStats({ users: users.length, subjects: subjects.length, questions: questions.length });
     
-    // Grab the 3 most recently registered non-admin users
     setRecentUsers(users.slice(-3).reverse());
+    setAnnouncements(getFromStorage('announcements', []));
   }, []);
+
+  const handlePostAnnouncement = (e) => {
+    e.preventDefault();
+    if (!announcementText.trim()) return;
+    const newAnnouncement = {
+      id: `ann_${Date.now()}`,
+      text: announcementText,
+      date: new Date().toISOString()
+    };
+    const updated = [newAnnouncement, ...announcements];
+    setAnnouncements(updated);
+    saveToStorage('announcements', updated);
+    setAnnouncementText('');
+  };
+
+  const handleDeleteAnnouncement = (id) => {
+    const updated = announcements.filter(a => a.id !== id);
+    setAnnouncements(updated);
+    saveToStorage('announcements', updated);
+  };
 
   return (
     <AdminLayout>
@@ -63,7 +87,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Main Content Area filling up the blank space */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
         
         {/* Quick Actions Panel */}
@@ -75,7 +98,7 @@ export default function AdminDashboard() {
             <Link to="/admin/subjects" className="btn btn-outline" style={{ display: 'flex', justifyContent: 'space-between', padding: '1.25rem', backgroundColor: 'var(--bg-primary)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <BookOpen size={20} color="var(--accent-secondary)" />
-                <span style={{ fontWeight: 500 }}>Create New Subject</span>
+                <span style={{ fontWeight: 500 }}>Manage Subjects</span>
               </div>
               <ChevronRight size={20} color="var(--text-muted)" />
             </Link>
@@ -83,7 +106,7 @@ export default function AdminDashboard() {
             <Link to="/admin/questions" className="btn btn-outline" style={{ display: 'flex', justifyContent: 'space-between', padding: '1.25rem', backgroundColor: 'var(--bg-primary)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <HelpCircle size={20} color="var(--success)" />
-                <span style={{ fontWeight: 500 }}>Add Quiz Questions</span>
+                <span style={{ fontWeight: 500 }}>Manage Questions</span>
               </div>
               <ChevronRight size={20} color="var(--text-muted)" />
             </Link>
@@ -95,6 +118,46 @@ export default function AdminDashboard() {
               </div>
               <ChevronRight size={20} color="var(--text-muted)" />
             </Link>
+          </div>
+        </div>
+
+        {/* Announcements Panel */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+          <h2 className="heading-2" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem', marginBottom: '1.5rem', fontSize: '1.25rem' }}>
+            <Megaphone size={20} color="var(--warning)" /> Broadcast Messages
+          </h2>
+          
+          <form onSubmit={handlePostAnnouncement} style={{ marginBottom: '1.5rem' }}>
+            <textarea 
+              className="input" 
+              placeholder="Type a message (e.g. Passwords, Instructions) to push to all student dashboards..."
+              value={announcementText}
+              onChange={e => setAnnouncementText(e.target.value)}
+              style={{ resize: 'vertical', minHeight: '80px', marginBottom: '0.75rem' }}
+              required
+            />
+            <button type="submit" className="btn btn-primary" style={{ width: '100%', backgroundColor: 'var(--warning)', color: '#000', fontWeight: 600 }}>
+              Broadcast Announcement
+            </button>
+          </form>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1, maxHeight: '250px', overflowY: 'auto' }}>
+            {announcements.map(ann => (
+              <div key={ann.id} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '1rem', backgroundColor: 'var(--bg-primary)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid var(--warning)' }}>
+                <div style={{ flex: 1, marginRight: '1rem' }}>
+                  <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', lineHeight: '1.4' }}>{ann.text}</p>
+                  <p className="text-muted" style={{ fontSize: '0.75rem', margin: 0 }}>{new Date(ann.date).toLocaleString()}</p>
+                </div>
+                <button onClick={() => handleDeleteAnnouncement(ann.id)} className="btn btn-outline" style={{ padding: '0.35rem', border: 'none', color: 'var(--danger)' }} title="Delete Announcement">
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+            {announcements.length === 0 && (
+              <div style={{ textAlign: 'center', color: 'var(--text-muted)', paddingTop: '2rem' }}>
+                <p>No active broadcasts.</p>
+              </div>
+            )}
           </div>
         </div>
 

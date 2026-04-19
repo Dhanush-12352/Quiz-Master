@@ -3,13 +3,14 @@ import UserLayout from '../../components/UserLayout';
 import { getFromStorage, saveToStorage } from '../../utils/storage';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, CheckCircle, Lock, Trophy, Target, Clock, BookOpen } from 'lucide-react';
+import { ArrowRight, CheckCircle, Lock, Trophy, Target, Clock, BookOpen, Megaphone } from 'lucide-react';
 
 export default function UserDashboard() {
   const { currentUser } = useAuth();
   const [subjects, setSubjects] = useState([]);
   const [enrolledSubjects, setEnrolledSubjects] = useState([]);
   const [attempts, setAttempts] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
   
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [selectedSubjectForQuiz, setSelectedSubjectForQuiz] = useState(null);
@@ -20,6 +21,7 @@ export default function UserDashboard() {
 
   useEffect(() => {
     setSubjects(getFromStorage('subjects', []));
+    setAnnouncements(getFromStorage('announcements', []));
     
     const users = getFromStorage('users', []);
     const user = users.find(u => u.id === currentUser.id);
@@ -72,6 +74,25 @@ export default function UserDashboard() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h1 className="heading-1" style={{ margin: 0 }}>Student Dashboard</h1>
       </div>
+
+      {/* Announcements Banner */}
+      {announcements.length > 0 && (
+        <div style={{ marginBottom: '2.5rem' }}>
+          <h2 className="heading-2" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1.25rem' }}>
+            <Megaphone size={20} color="var(--warning)" /> Important Announcements
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+            {announcements.map(ann => (
+              <div key={ann.id} style={{ padding: '1.25rem', backgroundColor: 'rgba(245, 158, 11, 0.1)', borderRadius: 'var(--radius-md)', borderLeft: '4px solid var(--warning)' }}>
+                <p style={{ margin: '0 0 0.5rem 0', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.5 }}>{ann.text}</p>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--warning)', fontWeight: 600 }}>
+                  ADMINISTRATOR POST • {new Date(ann.date).toLocaleDateString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="dashboard-grid" style={{ marginBottom: '2.5rem' }}>
         <div className="card" style={{ borderLeft: '4px solid var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '1rem' }}>

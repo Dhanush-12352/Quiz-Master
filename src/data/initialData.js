@@ -68,4 +68,9 @@ export const initializeAppStorage = () => {
   if (!attempts) {
     saveToStorage('attempts', []); 
   }
+
+  const announcements = getFromStorage('announcements');
+  if (!announcements) {
+    saveToStorage('announcements', []); 
+  }
 };
